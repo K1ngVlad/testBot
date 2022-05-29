@@ -1,6 +1,10 @@
 const TelegramApi = require('node-telegram-bot-api');
 
-const token = '5564773201:AAH1s5uGTdCVBmJwq7uNFxZICcVsD9RXatY';
+const dotenv = require('dotenv');
+
+dotenv.config();
+
+const token = process.env.TOKEN; //Токен вашего бота
 
 const bot = new TelegramApi(token, { polling: true });
 
@@ -31,13 +35,16 @@ const gameOptions = {
 
 const restartGame = {
   reply_markup: JSON.stringify({
-    inline_keyboard: [
-      [{ text: 'Сыграть ещё раз', callback_data: 'startGame' }],
-    ],
+    inline_keyboard: [[{ text: 'Сыграть ещё раз', callback_data: '/restart' }]],
   }),
 };
 
 const ranNum = (n) => Math.ceil(Math.random() * n);
+
+const startGame = async (chatId) => {
+  chats[chatId] = ranNum(10);
+  await bot.sendMessage(chatId, `Отгадывай`, gameOptions);
+};
 
 const start = () => {
   bot.setMyCommands([
@@ -66,8 +73,7 @@ const start = () => {
           chatId,
           `Давай поиграем в игру! Я загадаю случайное число от 1 до 10, а ты будешь отгадывать!`
         );
-        chats[chatId] = ranNum(10);
-        await bot.sendMessage(chatId, `Отгадывай`, gameOptions);
+        startGame(chatId);
         break;
 
       default:
@@ -78,16 +84,33 @@ const start = () => {
 
   bot.on('callback_query', async (msg) => {
     const chatId = msg.message.chat.id;
-    const data = msg.data - 0;
+    const data = msg.data;
+
+    if (data === '/restart') {
+      startGame(chatId);
+      return;
+    }
+
+    if (chats[chatId] === null) {
+      await bot.sendMessage(
+        chatId,
+        `Воу, воу, полегче, ковбой! Я ещё не успел загадать число. Если хочешь сыграть ещё раз, нажми на кнопку "Сыграть ещё раз"`,
+        restartGame
+      );
+      return;
+    }
 
     await bot.sendMessage(chatId, `Ты выбрал число ${data}.`);
-    if (data === chats[chatId]) {
-      await bot.sendMessage(chatId, `Поздравляю, ты отгадал!`);
+    if (data - 0 === chats[chatId]) {
+      await bot.sendMessage(chatId, `Поздравляю, ты отгадал!`, restartGame);
+      chats[chatId] = null;
     } else {
       await bot.sendMessage(
         chatId,
-        `Не правильно! Бот загадал ${chats[chatId]}`
+        `Не правильно! Бот загадал ${chats[chatId]}`,
+        restartGame
       );
+      chats[chatId] = null;
     }
   });
 };

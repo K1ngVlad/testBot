@@ -4,13 +4,14 @@
   "description": "Is test bot",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon index.js",
+    "dev": "nodemon -L index.js",
     "start": "node index.js"
   },
   "keywords": [],
   "author": "Vladislav Khitrunov kingvlad3008@gmail.com",
   "license": "ISC",
   "dependencies": {
+    "dotenv": "^16.0.1",
     "node-telegram-bot-api": "^0.57.0",
     "nodemon": "^2.0.16"
   }
